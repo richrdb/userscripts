@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TUWEL Subtitle Download
 // @namespace    local.tuwel-subtitles
-// @version      1.5.0
+// @version      1.5.4
 // @description  Download subtitles for one recording or all listed recordings for a selected subtitle track.
 // @match        https://tuwel.tuwien.ac.at/mod/opencast/view.php*
 // @run-at       document-idle
@@ -95,6 +95,7 @@
 
     const groups = new Map();
     const pending = new Set(recordings);
+    const recordingsWithSubtitles = new Set();
 
     async function downloadAll(tracks) {
         let failed = 0;
@@ -128,6 +129,7 @@
                 if (!Array.isArray(episode.captions)) throw new Error("Subtitle data not found.");
                 episode.captions.forEach((caption, index) => {
                     if (!caption?.url) return;
+                    recordingsWithSubtitles.add(url);
                     const label = trackLabel(caption, index);
                     const key = JSON.stringify([caption.lang || "", label]);
                     if (!groups.has(key)) groups.set(key, { label, tracks: [] });
@@ -144,8 +146,8 @@
         }
         if (pending.size) loadButton.textContent = "Retry failed recordings";
         else loadButton.remove();
-        status.textContent = pending.size ? `${pending.size} recordings could not be loaded` :
-            groups.size ? "" : "No subtitles found";
+        status.textContent = `Available ${recordingsWithSubtitles.size} / ${recordings.length}` +
+            (pending.size ? ` · ${pending.size} recordings could not be loaded` : "");
     });
     main.prepend(row);
 })();
